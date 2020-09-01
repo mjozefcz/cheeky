@@ -7,20 +7,22 @@ local client = client
 local pairs  = pairs
 local table  = table
 
-module("cheeky.util")
+--
+local util = { }
 
 local matcher_str = ""
 local client_menu = nil
 
 local options = {
   -- coords are handled by Awesome --
-  hide_notification     = false,
+  notification_hide     = false,
   notification_text     = "No matches. Resetting.",
   notification_timeout  = 1,
-  menu_theme            = {},
-  show_tag              = false, -- display tag at left side of menu
-  show_screen           = false, -- display screen index at left side of menu
-  quit_key              = nil,   -- close menu if this key is entered
+  menu_theme            = { },
+  show_tag              = false,
+  show_screen           = false,
+  quit_key              = nil,
+  select_key            = nil
 }
 
 function no_case(str)
@@ -35,9 +37,8 @@ end
 function draw_menu(list)
   if client_menu then client_menu:hide() end
 
-  client_menu = awful.menu.new({items = list, 
-                            theme = options.menu_theme
-                           })
+  client_menu = awful.menu.new({ items = list,
+                                 theme = options.menu_theme })
   client_menu:item_enter(1)
   client_menu:show(options)
 end
@@ -60,7 +61,7 @@ function match_clients(str)
       end
 
       if options.show_screen then
-        menu_entry = menu_entry .. "(" .. screen .. ") "
+        menu_entry = menu_entry .. "(" .. string.match(screen, "%d") .. ") "
       end
 
       menu_entry = menu_entry .. c.name
@@ -78,7 +79,7 @@ function rerun(str)
   local client_list = match_clients(str)
 
   if #client_list == 0 then
-    if not options.hide_notification then
+    if not options.notification_hide then
       naughty.notify({ text    = options.notification_text,
                        timeout = options.notification_timeout })
     end
@@ -121,7 +122,7 @@ function grabber(mod, key, event)
     client_menu:exec(10, { exec = true })
     close()
 
-  elseif sel > 0 and key == 'Return' then
+  elseif sel > 0 and (key == 'Return' or key == options.select_key) then
     client_menu:exec(sel, { exec = true })
     close()
 
@@ -153,7 +154,12 @@ function close()
   matcher_str = ""
 end
 
-function switcher(opts)
+function util.switcher(opts)
+  if opts and (not opts.hide_notification == nil) then
+    naughty.notify({ text    = "cheeky: 'hide_notification' is deprecated, use 'notification_hide'.",
+                     timeout = 5 })
+  end
+
   if client.instances() < 1 then
     naughty.notify({ text    = "No clients. Exiting.",
                      timeout = options.notification_timeout })
@@ -170,3 +176,6 @@ function switcher(opts)
 
   awful.keygrabber.run(grabber)
 end
+
+
+return util

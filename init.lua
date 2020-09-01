@@ -1,2 +1,5 @@
-require("cheeky.util")
-module("cheeky")
+local cheeky = {
+   util = require("cheeky.util")
+}
+
+return cheeky
